@@ -17,7 +17,9 @@ function createApp(options = {}) {
   app.use(
     cors({
       origin(origin, callback) {
-        if (!origin || origin === frontendUrl) {
+        const cleanOrigin = origin ? origin.replace(/\/$/, '') : '';
+        const cleanFrontend = frontendUrl.replace(/\/$/, '');
+        if (!origin || cleanOrigin === cleanFrontend) {
           return callback(null, true);
         }
 
