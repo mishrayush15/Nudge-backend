@@ -14,6 +14,90 @@ supabase.auth.getUser = async (token) => {
   return { data: { user: { id: 'mock-user-id' } }, error: null };
 };
 
+// Mock Supabase Database Queries globally for testing
+supabase.from = (tableName) => {
+  return {
+    select: (fields) => {
+      return {
+        eq: (col, val) => {
+          return {
+            order: (sortCol, options) => {
+              return Promise.resolve({
+                data: [
+                  {
+                    id: 'product-uuid-1',
+                    name: 'Yogurt 200g',
+                    category: 'Dairy',
+                    expiry_date: '2026-06-25',
+                    quantity: 2,
+                    location: 'Fridge',
+                    days_left: 11,
+                    urgency_stage: 'warning',
+                  },
+                ],
+                error: null,
+              });
+            },
+          };
+        },
+      };
+    },
+    insert: (payload) => {
+      return {
+        select: (fields) => {
+          return {
+            single: () => {
+              return Promise.resolve({
+                data: {
+                  id: 'new-product-uuid',
+                  ...payload,
+                },
+                error: null,
+              });
+            },
+          };
+        },
+      };
+    },
+    update: (payload) => {
+      return {
+        eq: (col1, val1) => {
+          return {
+            eq: (col2, val2) => {
+              return {
+                select: (fields) => {
+                  return {
+                    single: () => {
+                      return Promise.resolve({
+                        data: {
+                          id: val1,
+                          ...payload,
+                        },
+                        error: null,
+                      });
+                    },
+                  };
+                },
+              };
+            },
+          };
+        },
+      };
+    },
+    delete: () => {
+      return {
+        eq: (col1, val1) => {
+          return {
+            eq: (col2, val2) => {
+              return Promise.resolve({ error: null });
+            },
+          };
+        },
+      };
+    },
+  };
+};
+
 const IMAGE = Buffer.from('fake-image');
 
 function appWithResult(result, textResult) {
@@ -250,4 +334,61 @@ test('rejects requests with missing or invalid authorization header', async () =
     .post('/api/scan/text')
     .set('Authorization', 'Bearer invalid-token')
     .expect(401);
+});
+
+test('GET /api/products returns products list for authenticated user', async () => {
+  const app = createApp({});
+  const response = await request(app)
+    .get('/api/products')
+    .set('Authorization', 'Bearer mock-token')
+    .expect(200);
+
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.data[0].name, 'Yogurt 200g');
+  assert.equal(response.body.data[0].days_left, 11);
+});
+
+test('POST /api/products creates product successfully', async () => {
+  const app = createApp({});
+  const response = await request(app)
+    .post('/api/products')
+    .set('Authorization', 'Bearer mock-token')
+    .send({
+      name: 'Bread',
+      category: 'Bakery',
+      expiryDate: '2026-06-20',
+      quantity: 1,
+      location: 'Pantry',
+    })
+    .expect(201);
+
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.data.name, 'Bread');
+  assert.equal(response.body.data.user_id, 'mock-user-id');
+});
+
+test('PUT /api/products/:id updates product successfully', async () => {
+  const app = createApp({});
+  const response = await request(app)
+    .put('/api/products/product-uuid-1')
+    .set('Authorization', 'Bearer mock-token')
+    .send({
+      name: 'Yogurt 200g (Blueberry)',
+      quantity: 3,
+    })
+    .expect(200);
+
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.data.name, 'Yogurt 200g (Blueberry)');
+});
+
+test('DELETE /api/products/:id deletes product successfully', async () => {
+  const app = createApp({});
+  const response = await request(app)
+    .delete('/api/products/product-uuid-1')
+    .set('Authorization', 'Bearer mock-token')
+    .expect(200);
+
+  assert.equal(response.body.success, true);
+  assert.equal(response.body.message, 'Product deleted successfully.');
 });

@@ -3,6 +3,7 @@ const cors = require('cors');
 const multer = require('multer');
 
 const { createScanRouter } = require('./routes/scan');
+const productRouter = require('./routes/products');
 const geminiService = require('./services/gemini');
 
 function createApp(options = {}) {
@@ -38,6 +39,7 @@ function createApp(options = {}) {
   });
 
   app.use('/api', createScanRouter({ analyzeImage, analyzeText }));
+  app.use('/api/products', productRouter);
 
   app.use((req, res) => {
     res.status(404).json({ success: false, error: 'Route not found.' });
