@@ -29,7 +29,7 @@ function createApp(options = {}) {
 
         return callback(new Error('Origin is not allowed by CORS.'));
       },
-      methods: ['GET', 'POST'],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     })
   );
   app.use(express.json({ limit: '100kb' }));
