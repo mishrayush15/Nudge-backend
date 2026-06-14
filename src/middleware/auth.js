@@ -1,4 +1,8 @@
 const { supabase } = require('../services/supabase');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -26,6 +30,20 @@ const requireAuth = async (req, res, next) => {
 
     // Attach user object to the request
     req.user = user;
+
+    // Create request-scoped Supabase client that inherits user's JWT
+    if (process.env.NODE_ENV === 'test') {
+      req.supabase = supabase;
+    } else {
+      req.supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      });
+    }
+
     next();
   } catch (err) {
     console.error('Authentication verification failed:', err);

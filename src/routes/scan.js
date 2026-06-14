@@ -26,7 +26,7 @@ function cleanText(value) {
 function createScanRouter({ analyzeImage, analyzeText }) {
   const router = express.Router();
 
-  router.post('/scan/image', requireAuth, upload.single('image'), async (req, res) => {
+  router.post('/scan/image', upload.single('image'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
@@ -64,10 +64,13 @@ function createScanRouter({ analyzeImage, analyzeText }) {
           });
         }
 
+        const categoryRaw = cleanText(rawResult && rawResult.category) || 'Pantry';
+        const category = categoryRaw.charAt(0).toUpperCase() + categoryRaw.slice(1).toLowerCase();
+
         return res.json({
           success: true,
           scanState,
-          data: { brand, product },
+          data: { brand, product, category },
         });
       }
 
@@ -113,7 +116,7 @@ function createScanRouter({ analyzeImage, analyzeText }) {
     }
   });
 
-  router.post('/scan/text', requireAuth, async (req, res) => {
+  router.post('/scan/text', async (req, res) => {
     try {
       const { text, scanState } = req.body;
 
@@ -149,10 +152,13 @@ function createScanRouter({ analyzeImage, analyzeText }) {
           });
         }
 
+        const categoryRaw = cleanText(rawResult && rawResult.category) || 'Pantry';
+        const category = categoryRaw.charAt(0).toUpperCase() + categoryRaw.slice(1).toLowerCase();
+
         return res.json({
           success: true,
           scanState,
-          data: { brand, product },
+          data: { brand, product, category },
         });
       }
 

@@ -7,7 +7,7 @@ const router = express.Router();
 // Get all products for the authenticated user (calculates days remaining via urgency view)
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await req.supabase
       .from('products_with_urgency')
       .select('*')
       .eq('user_id', req.user.id)
@@ -23,7 +23,7 @@ router.get('/', requireAuth, async (req, res) => {
     console.error('Error fetching products:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to fetch products.',
+      error: error.message || 'Failed to fetch products.',
     });
   }
 });
@@ -40,7 +40,7 @@ router.post('/', requireAuth, async (req, res) => {
       });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await req.supabase
       .from('products')
       .insert({
         user_id: req.user.id,
@@ -64,7 +64,7 @@ router.post('/', requireAuth, async (req, res) => {
     console.error('Error creating product:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to create product.',
+      error: error.message || 'Failed to create product.',
     });
   }
 });
@@ -75,7 +75,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     const { name, code, category, expiryDate, quantity, location } = req.body;
 
-    const { data, error } = await supabase
+    const { data, error } = await req.supabase
       .from('products')
       .update({
         name,
@@ -100,7 +100,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     console.error('Error updating product:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to update product.',
+      error: error.message || 'Failed to update product.',
     });
   }
 });
@@ -110,7 +110,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
+    const { error } = await req.supabase
       .from('products')
       .delete()
       .eq('id', id)
@@ -126,7 +126,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     console.error('Error deleting product:', error);
     return res.status(500).json({
       success: false,
-      error: 'Failed to delete product.',
+      error: error.message || 'Failed to delete product.',
     });
   }
 });

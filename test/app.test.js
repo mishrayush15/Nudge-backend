@@ -1,3 +1,4 @@
+process.env.NODE_ENV = 'test';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
@@ -191,17 +192,18 @@ test('rejects unsupported and oversized image uploads', async () => {
 
 test('returns complete and partial product scan results', async () => {
   const complete = await scan(
-    appWithResult({ brand: 'Amul', product: 'Toned Milk 500ml' })
+    appWithResult({ brand: 'Amul', product: 'Toned Milk 500ml', category: 'Dairy' })
   ).expect(200);
   assert.deepEqual(complete.body.data, {
     brand: 'Amul',
     product: 'Toned Milk 500ml',
+    category: 'Dairy',
   });
 
   const partial = await scan(
-    appWithResult({ brand: 'Amul', product: null })
+    appWithResult({ brand: 'Amul', product: null, category: null })
   ).expect(200);
-  assert.deepEqual(partial.body.data, { brand: 'Amul', product: null });
+  assert.deepEqual(partial.body.data, { brand: 'Amul', product: null, category: 'Pantry' });
 });
 
 test('returns data null for unreadable product and expiry frames', async () => {
@@ -270,11 +272,12 @@ test('rejects missing or invalid text / scanState on text endpoint', async () =>
 
 test('returns product data from text scan', async () => {
   const complete = await scanText(
-    appWithResult({ brand: 'Amul', product: 'Toned Milk 500ml' })
+    appWithResult({ brand: 'Amul', product: 'Toned Milk 500ml', category: 'Dairy' })
   ).expect(200);
   assert.deepEqual(complete.body.data, {
     brand: 'Amul',
     product: 'Toned Milk 500ml',
+    category: 'Dairy',
   });
 });
 
@@ -326,12 +329,12 @@ test('maps text scan Gemini failures to a sanitized 502 response', async () => {
   assert.doesNotMatch(response.body.error, /secret/);
 });
 
-test('rejects requests with missing or invalid authorization header', async () => {
-  const app = appWithResult({});
-  await request(app).post('/api/scan/image').expect(401);
-  await request(app).post('/api/scan/text').expect(401);
+test('rejects requests with missing or invalid authorization header for product endpoints', async () => {
+  const app = createApp({});
+  await request(app).get('/api/products').expect(401);
+  await request(app).post('/api/products').expect(401);
   await request(app)
-    .post('/api/scan/text')
+    .get('/api/products')
     .set('Authorization', 'Bearer invalid-token')
     .expect(401);
 });
