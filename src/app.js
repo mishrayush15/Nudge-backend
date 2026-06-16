@@ -29,6 +29,12 @@ function createApp(options = {}) {
           return callback(null, true);
         }
 
+        // Allow Capacitor webview origins (http://localhost, https://localhost, capacitor://localhost)
+        const isCapacitor = /^(https?|capacitor):\/\/localhost$/i.test(origin);
+        if (isCapacitor) {
+          return callback(null, true);
+        }
+
         return callback(new Error('Origin is not allowed by CORS.'));
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
